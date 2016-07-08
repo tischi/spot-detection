@@ -1,31 +1,52 @@
 from ij import IJ
 from ij.gui import OvalRoi, Line
 
+r = 3
+c = 256
+dc = 30
+n = 8
+SNR = 3
+blur = 1 
+
 imp = IJ.createImage("Untitled", "8-bit black", 512, 512, 1);
 IJ.run(imp, "RGB Color", "");
 IJ.run(imp, "Radial Gradient", "");
 IJ.run(imp, "8-bit", "");
-IJ.run(imp, "Divide...", "value=2");
-
-r = 4
-c = 256
-dc = 30
-n = 8
+IJ.run(imp, "Divide...", "value="+str(SNR));
 
 for i in range(n):
   imp.setRoi(OvalRoi(c-i*dc,c-i*dc,r,r));
-  IJ.run(imp, "Multiply...", "value=2.0000");
+  IJ.run(imp, "Multiply...", "value="+str(SNR));
 
-# Line
-imp.setRoi(80,50,int(3/2*c),4);
-IJ.run(imp, "Multiply...", "value=2.0000");
 
-# Circle
-imp.setRoi(OvalRoi(int(c/2),int(c/2+c),50,50));
-IJ.run(imp, "Multiply...", "value=2.0000");
+# Line with dots
+for i in range(n):
+  imp.setRoi(OvalRoi(80+i*dc,50,r,r));
+  IJ.run(imp, "Multiply...", "value="+str(SNR));
+imp.setRoi(80,50,int(3/2*c),r);
+IJ.run(imp, "Add...", "value=80");
+  
 
-imp.setRoi(OvalRoi(int(c/2+c),int(c/2+c),50,50));
-IJ.setBackgroundColor(0, 0, 0);
-IJ.run(imp, "Clear", "slice");
+# Nuclear Envelope
+rc = 70
+imp.setRoi(OvalRoi(int(c),int(c/2+c),rc,rc));
+IJ.run(imp, "Properties... ", "  width="+str(r));
+IJ.run(imp, "Draw", "slice");
 
-imp.show();
+# Full Nucleus
+imp.setRoi(OvalRoi(int(c/2),int(c/2+c),rc,rc));
+IJ.run(imp, "Multiply...", "value="+str(SNR));
+
+# Empty hole
+imp.setRoi(OvalRoi(int(c/2+c),int(c/2+c),rc,rc));
+IJ.run(imp, "Multiply...", "value=0.5");
+
+
+# Blur
+IJ.run(imp, "Select None", "");
+IJ.run(imp, "Gaussian Blur...", "sigma="+str(blur));
+
+# Noise
+IJ.run(imp, "RandomJ Poisson", "mean=1.0 insertion=Modulatory");
+
+#imp.show();
